@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Application - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-9 col-lg-8">
+        <div class="card border-0 shadow rounded-4 overflow-hidden">
+            <div class="card-header bg-info text-dark p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-medical display-5"></i>
+                    <div>
+                        <h4 class="mb-1 fw-bold">Medical Doctor Application</h4>
+                        <p class="mb-0 text-dark-50 small">Submit credentials for administrator verification & approval</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+                    <i class="bi bi-shield-lock-fill fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong>Notice:</strong> Doctor accounts require administrative verification. Once registered, your application will be placed in <em>pending</em> status until approved.
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register_doctor') }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.name.label(class="form-label fw-semibold") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Dr. Jane Smith") }}
+                            {% for error in form.name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.email.label(class="form-label fw-semibold") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="dr.smith@example.com") }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.password.label(class="form-label fw-semibold") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Minimum 8 characters") }}
+                            {% for error in form.password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.confirm_password.label(class="form-label fw-semibold") }}
+                            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Confirm password") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.specialization.label(class="form-label fw-semibold") }}
+                            {{ form.specialization(class="form-control" + (" is-invalid" if form.specialization.errors else ""), placeholder="e.g. Cardiology, Neurology") }}
+                            {% for error in form.specialization.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.qualification.label(class="form-label fw-semibold") }}
+                            {{ form.qualification(class="form-control" + (" is-invalid" if form.qualification.errors else ""), placeholder="e.g. MBBS, MD, FACC") }}
+                            {% for error in form.qualification.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.license_number.label(class="form-label fw-semibold") }}
+                            {{ form.license_number(class="form-control" + (" is-invalid" if form.license_number.errors else ""), placeholder="e.g. MED-889021") }}
+                            {% for error in form.license_number.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-3">
+                            {{ form.experience_years.label(class="form-label fw-semibold") }}
+                            {{ form.experience_years(class="form-control" + (" is-invalid" if form.experience_years.errors else ""), type="number", min="0") }}
+                            {% for error in form.experience_years.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-3">
+                            {{ form.consultation_fee.label(class="form-label fw-semibold") }}
+                            {{ form.consultation_fee(class="form-control" + (" is-invalid" if form.consultation_fee.errors else ""), type="number", step="0.01", min="0") }}
+                            {% for error in form.consultation_fee.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            {{ form.bio.label(class="form-label fw-semibold") }}
+                            {{ form.bio(class="form-control" + (" is-invalid" if form.bio.errors else ""), rows="3", placeholder="Briefly describe your medical practice & background") }}
+                            {% for error in form.bio.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-info text-dark rounded-pill py-2 fw-bold") }}
+                    </div>
+
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        Already have an account? <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-semibold">Sign In</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

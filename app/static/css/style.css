@@ -1,0 +1,28 @@
+/* Custom styles for Medical Appointment & Prescription Manager */
+:root {
+    --primary-color: #0d6efd;
+    --primary-hover: #0b5ed7;
+    --border-radius-custom: 1rem;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #2b2d42;
+}
+
+.max-w-600 {
+    max-width: 600px;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.nav-link {
+    font-weight: 500;
+}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Login - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4 text-center">
+                <i class="bi bi-person-lock display-4"></i>
+                <h4 class="mt-2 fw-bold">Sign In to MedCare</h4>
+                <p class="mb-0 text-white-50 small">Access your patient or medical provider account</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label fw-semibold") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@example.com") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label fw-semibold") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Enter password") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="form-check">
+                            {{ form.remember_me(class="form-check-input") }}
+                            {{ form.remember_me.label(class="form-check-label text-muted small") }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        {{ form.submit(class="btn btn-primary rounded-pill py-2 fw-semibold") }}
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="text-muted small mb-2">Don't have an account?</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{{ url_for('auth.register_patient') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                Register as Patient
+                            </a>
+                            <a href="{{ url_for('auth.register_doctor') }}" class="btn btn-outline-info btn-sm rounded-pill px-3">
+                                Register as Doctor
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

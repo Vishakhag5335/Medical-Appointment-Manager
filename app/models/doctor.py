@@ -5,8 +5,12 @@ from app.extensions import db
 class Doctor(db.Model):
     """Doctor profile model linked one-to-one with User."""
     __tablename__ = 'doctors'
+    __table_args__ = (
+        db.CheckConstraint("verification_status IN ('pending', 'approved', 'rejected')", name='ck_doctors_verification_status'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
+
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
     specialization = db.Column(db.String(100), nullable=False)
     qualification = db.Column(db.String(100), nullable=False)

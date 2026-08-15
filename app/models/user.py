@@ -7,8 +7,12 @@ from app.extensions import db
 class User(UserMixin, db.Model):
     """User Model for authentication and role management."""
     __tablename__ = 'users'
+    __table_args__ = (
+        db.CheckConstraint("role IN ('patient', 'doctor', 'admin')", name='ck_users_role'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
+
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)

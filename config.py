@@ -26,6 +26,13 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload size
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 
+    # Session & Cookie Security
+    SESSION_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+
+
 
 class DevelopmentConfig(Config):
     """Development Configuration."""

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Account Approval Pending - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow rounded-4 text-center overflow-hidden">
+            <div class="card-header bg-warning bg-opacity-25 border-bottom-0 py-4">
+                <i class="bi bi-clock-history display-1 text-warning"></i>
+            </div>
+            <div class="card-body p-4">
+                <h3 class="fw-bold text-dark mb-2">Doctor Application Under Review</h3>
+                <p class="text-secondary mb-4">
+                    Thank you for registering with MedCare Manager. Your medical credentials and license details are currently being verified by our administrative team.
+                </p>
+                <div class="p-3 bg-light rounded-3 text-start mb-4 border">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-semibold text-muted">Account Holder:</span>
+                        <span class="fw-bold">{{ current_user.name }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-semibold text-muted">Email:</span>
+                        <span>{{ current_user.email }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold text-muted">Verification Status:</span>
+                        <span class="badge bg-warning text-dark px-3 py-1 rounded-pill">Pending Approval</span>
+                    </div>
+                </div>
+                <p class="small text-muted mb-4">
+                    Once an administrator approves your account, full access to doctor features will be enabled.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <form method="POST" action="{{ url_for('auth.logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                        </button>
+                    </form>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-house me-1"></i> Return Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,3 +1,4 @@
+import os
 import click
 from datetime import date
 from flask.cli import AppGroup
@@ -5,6 +6,7 @@ from app.extensions import db
 from app.models.user import User
 from app.models.patient import Patient
 from app.models.doctor import Doctor
+from app.utils.security import validate_password_strength
 
 admin_cli = AppGroup('admin', help='Admin management commands.')
 
@@ -22,6 +24,11 @@ def register_cli_commands(app):
         existing_user = User.query.filter_by(email=email_clean).first()
         if existing_user:
             click.echo(click.style(f'Error: User with email {email_clean} already exists.', fg='red'))
+            return
+
+        is_valid, errors = validate_password_strength(password)
+        if not is_valid:
+            click.echo(click.style(f'Error: Password does not meet security requirements: {errors[0]}', fg='red'))
             return
 
         try:
@@ -44,11 +51,22 @@ def register_cli_commands(app):
         """Seeds initial development data (1 admin, 1 approved doctor, 1 pending doctor, 1 patient)."""
         click.echo('Seeding database with test records...')
 
+        admin_pass = os.environ.get('SEED_ADMIN_PASSWORD')
+        doctor_pass = os.environ.get('SEED_DOCTOR_PASSWORD')
+        patient_pass = os.environ.get('SEED_PATIENT_PASSWORD')
+
+        if not admin_pass:
+            admin_pass = click.prompt('Enter password for SEED Admin', hide_input=True)
+        if not doctor_pass:
+            doctor_pass = click.prompt('Enter password for SEED Doctors', hide_input=True)
+        if not patient_pass:
+            patient_pass = click.prompt('Enter password for SEED Patient', hide_input=True)
+
         # 1. Seed Admin
         admin = User.query.filter_by(email='admin@medcare.com').first()
         if not admin:
             admin = User(name='System Admin', email='admin@medcare.com', role='admin', is_active=True)
-            admin.set_password('AdminPass123!')
+            admin.set_password(admin_pass)
             db.session.add(admin)
             click.echo(' - Created Admin (admin@medcare.com)')
 
@@ -56,7 +74,7 @@ def register_cli_commands(app):
         doc1_user = User.query.filter_by(email='dr.smith@medcare.com').first()
         if not doc1_user:
             doc1_user = User(name='Dr. Sarah Smith', email='dr.smith@medcare.com', role='doctor', is_active=True)
-            doc1_user.set_password('DoctorPass123!')
+            doc1_user.set_password(doctor_pass)
             db.session.add(doc1_user)
             db.session.flush()
 
@@ -77,7 +95,7 @@ def register_cli_commands(app):
         doc2_user = User.query.filter_by(email='dr.johnson@medcare.com').first()
         if not doc2_user:
             doc2_user = User(name='Dr. Robert Johnson', email='dr.johnson@medcare.com', role='doctor', is_active=True)
-            doc2_user.set_password('DoctorPass123!')
+            doc2_user.set_password(doctor_pass)
             db.session.add(doc2_user)
             db.session.flush()
 
@@ -98,7 +116,7 @@ def register_cli_commands(app):
         pat_user = User.query.filter_by(email='patient@medcare.com').first()
         if not pat_user:
             pat_user = User(name='Alice Brown', email='patient@medcare.com', role='patient', is_active=True)
-            pat_user.set_password('PatientPass123!')
+            pat_user.set_password(patient_pass)
             db.session.add(pat_user)
             db.session.flush()
 

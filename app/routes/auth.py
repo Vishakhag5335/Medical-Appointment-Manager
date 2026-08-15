@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.forms.auth import LoginForm, PatientRegistrationForm, DoctorRegistrationForm
+from app.utils.security import is_safe_url
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -15,6 +16,8 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     """User Login Route."""
     if current_user.is_authenticated:
+        if current_user.role == 'doctor' and current_user.doctor and current_user.doctor.verification_status == 'pending':
+            return redirect(url_for('auth.approval_pending'))
         return redirect(url_for('main.index'))
 
     form = LoginForm()
@@ -37,9 +40,14 @@ def login():
         user.last_login = datetime.utcnow()
         db.session.commit()
 
+        # Check pending status for doctor accounts
+        if user.role == 'doctor' and user.doctor and user.doctor.verification_status == 'pending':
+            flash(f'Welcome, {user.name}. Your doctor application is pending administrator approval.', 'info')
+            return redirect(url_for('auth.approval_pending'))
+
         flash(f'Welcome back, {user.name}!', 'success')
         next_page = request.args.get('next')
-        if not next_page or not next_page.startswith('/'):
+        if not next_page or not is_safe_url(next_page):
             next_page = url_for('main.index')
         return redirect(next_page)
 
@@ -120,7 +128,7 @@ def register_doctor():
             db.session.add(doctor)
             db.session.commit()
 
-            flash('Doctor registration submitted! Your account requires administrator approval before logging in.', 'info')
+            flash('Doctor registration submitted! Your account requires administrator approval before accessing provider features.', 'info')
             return redirect(url_for('auth.login'))
 
         except IntegrityError:
@@ -133,10 +141,19 @@ def register_doctor():
     return render_template('auth/doctor_register.html', form=form)
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/approval-pending', methods=['GET'])
+@login_required
+def approval_pending():
+    """Doctor Approval Pending Notice View."""
+    if current_user.role != 'doctor' or not current_user.doctor or current_user.doctor.verification_status != 'pending':
+        return redirect(url_for('main.index'))
+    return render_template('auth/approval_pending.html')
+
+
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
-    """Logout Route."""
+    """Logout Route (CSRF-protected POST request)."""
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('main.index'))

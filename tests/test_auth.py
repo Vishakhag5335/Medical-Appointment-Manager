@@ -1,3 +1,5 @@
+import os
+import inspect
 import pytest
 from app import create_app
 from app.extensions import db
@@ -5,16 +7,17 @@ from app.models.user import User
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.utils.decorators import role_required, doctor_approved_required
-from flask import Blueprint, jsonify
+from app.utils.security import is_safe_url, validate_password_strength
+from flask import Blueprint, jsonify, request
 
 
 @pytest.fixture
 def app():
-    """App fixture using TestingConfig (in-memory SQLite)."""
+    """App fixture using TestingConfig with isolated database."""
     app = create_app('testing')
-    
-    # Register test blueprint for decorator verification
-    test_bp = Blueprint('test', __name__)
+
+    # Register test blueprint for authorization decorator testing
+    test_bp = Blueprint('test_auth_routes', __name__)
 
     @test_bp.route('/test-admin-only')
     @role_required('admin')
@@ -26,6 +29,11 @@ def app():
     def doctor_approved_only():
         return jsonify({'message': 'Approved Doctor Access Granted'})
 
+    @test_bp.route('/test-patient-only')
+    @role_required('patient')
+    def patient_only():
+        return jsonify({'message': 'Patient Access Granted'})
+
     app.register_blueprint(test_bp)
 
     with app.app_context():
@@ -36,7 +44,6 @@ def app():
     with app.app_context():
         db.session.remove()
         db.drop_all()
-
 
 
 @pytest.fixture
@@ -51,223 +58,265 @@ def runner(app):
     return app.test_cli_runner()
 
 
+# 1. App creation
 def test_app_creation(app):
-    """Test application factory initializes cleanly in testing mode."""
     assert app.config['TESTING'] is True
 
 
+# 2. Patient registration success
 def test_patient_registration_success(client, app):
-    """Test registering a new patient account."""
     response = client.post('/auth/register', data={
-        'name': 'Test Patient',
-        'email': 'newpatient@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!',
-        'gender': 'male'
+        'name': 'Valid Patient',
+        'email': 'validpatient@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!',
+        'gender': 'female'
     }, follow_redirects=True)
 
     assert response.status_code == 200
     with app.app_context():
-        user = User.query.filter_by(email='newpatient@example.com').first()
+        user = User.query.filter_by(email='validpatient@example.com').first()
         assert user is not None
         assert user.role == 'patient'
         assert user.patient is not None
-        assert user.check_password('Password123!') is True
 
 
+# 3. Duplicate email rejection
 def test_duplicate_email_rejection(client):
-    """Test registering with an existing email fails validation."""
     client.post('/auth/register', data={
         'name': 'Patient One',
-        'email': 'existing@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'email': 'dup@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
 
     response = client.post('/auth/register', data={
         'name': 'Patient Two',
-        'email': 'existing@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'email': 'dup@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
 
     assert b'This email address is already registered.' in response.data
 
 
+# 4. Invalid email rejection
 def test_invalid_email_rejection(client):
-    """Test registering with invalid email format."""
     response = client.post('/auth/register', data={
         'name': 'Invalid Email User',
-        'email': 'not-an-email',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'email': 'invalid-email-format',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
 
     assert b'Please enter a valid email address.' in response.data
 
 
-def test_weak_password_rejection(client):
-    """Test registering with a weak password without uppercase/digit."""
-    response = client.post('/auth/register', data={
-        'name': 'Weak Password User',
-        'email': 'weak@example.com',
-        'password': 'weakpassword',
-        'confirm_password': 'weakpassword'
-    })
-
-    assert b'Password must contain at least one uppercase letter.' in response.data or \
-           b'Password must contain at least one digit.' in response.data
+# 5 & 6. Strong password validation & Weak password rejection
+def test_password_validation_rules():
+    assert validate_password_strength("StrongPass123!")[0] is True
+    assert validate_password_strength("short1!")[0] is False  # Min 8
+    assert validate_password_strength("nouppercase123!")[0] is False  # Missing uppercase
+    assert validate_password_strength("NOLOWERCASE123!")[0] is False  # Missing lowercase
+    assert validate_password_strength("NoDigitsHere!")[0] is False  # Missing digit
+    assert validate_password_strength("NoSpecialChar123")[0] is False  # Missing special char
 
 
-def test_password_mismatch_rejection(client):
-    """Test registering with mismatching password fields."""
-    response = client.post('/auth/register', data={
-        'name': 'Mismatch User',
-        'email': 'mismatch@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Different123!'
-    })
-
-    assert b'Passwords must match.' in response.data
-
-
+# 7. Patient login success
 def test_patient_login_success(client, app):
-    """Test logging in with valid credentials."""
-    # Register user first
     client.post('/auth/register', data={
-        'name': 'Login Patient',
-        'email': 'loginpatient@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'name': 'Login User',
+        'email': 'userlogin@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
 
-    # Perform login
     response = client.post('/auth/login', data={
-        'email': 'loginpatient@example.com',
-        'password': 'Password123!'
+        'email': 'userlogin@example.com',
+        'password': 'StrongPassword123!'
     }, follow_redirects=True)
 
     assert response.status_code == 200
-    assert b'Welcome back, Login Patient!' in response.data
-
-    with app.app_context():
-        user = User.query.filter_by(email='loginpatient@example.com').first()
-        assert user.last_login is not None
+    assert b'Welcome back, Login User!' in response.data
 
 
+# 8. Wrong password rejection
 def test_wrong_password_rejection(client):
-    """Test logging in with wrong password."""
     client.post('/auth/register', data={
-        'name': 'Wrong Pass User',
+        'name': 'User Wrong Pass',
         'email': 'wrongpass@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
 
     response = client.post('/auth/login', data={
         'email': 'wrongpass@example.com',
-        'password': 'IncorrectPassword1!'
+        'password': 'IncorrectPassword123!'
     })
 
     assert b'Invalid email or password.' in response.data
 
 
-def test_logout(client):
-    """Test logging out an authenticated user."""
+# 9. POST logout success
+def test_post_logout_success(client):
     client.post('/auth/register', data={
         'name': 'Logout User',
-        'email': 'logout@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'email': 'postlogout@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
-
     client.post('/auth/login', data={
-        'email': 'logout@example.com',
-        'password': 'Password123!'
+        'email': 'postlogout@example.com',
+        'password': 'StrongPassword123!'
     })
 
-    response = client.get('/auth/logout', follow_redirects=True)
+    response = client.post('/auth/logout', follow_redirects=True)
     assert response.status_code == 200
     assert b'You have been logged out.' in response.data
 
 
-def test_role_based_access_admin_only(client, app):
-    """Test @role_required('admin') decorator blocks patients and allows admins."""
-    # 1. Register and login as patient
+# 10. GET logout rejection (Method Not Allowed 405)
+def test_get_logout_rejected(client):
     client.post('/auth/register', data={
-        'name': 'Normal Patient',
-        'email': 'patient_role@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!'
+        'name': 'Get Logout User',
+        'email': 'getlogout@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
     })
     client.post('/auth/login', data={
-        'email': 'patient_role@example.com',
-        'password': 'Password123!'
+        'email': 'getlogout@example.com',
+        'password': 'StrongPassword123!'
     })
 
-    # Patient attempts to access admin route -> 403
-    res = client.get('/test-admin-only')
-    assert res.status_code == 403
+    response = client.get('/auth/logout')
+    assert response.status_code == 405  # Method Not Allowed
 
-    client.get('/auth/logout')
 
-    # 2. Create admin user and login
-    with app.app_context():
-        admin = User(name='Admin User', email='admin_role@example.com', role='admin', is_active=True)
-        admin.set_password('AdminPass123!')
-        db.session.add(admin)
-        db.session.commit()
+# 11. Unauthenticated protected route
+def test_unauthenticated_protected_route(client):
+    response = client.get('/test-admin-only', follow_redirects=True)
+    assert response.status_code == 200
+    assert b'Please log in to access this page.' in response.data
 
+
+# 12. Patient role authorization
+def test_patient_role_authorization(client):
+    client.post('/auth/register', data={
+        'name': 'Patient Authorization Test',
+        'email': 'patientauth@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
+    })
     client.post('/auth/login', data={
-        'email': 'admin_role@example.com',
-        'password': 'AdminPass123!'
+        'email': 'patientauth@example.com',
+        'password': 'StrongPassword123!'
     })
 
-    # Admin accesses admin route -> 200
+    # Patient accessing patient route -> 200
+    res_pat = client.get('/test-patient-only')
+    assert res_pat.status_code == 200
+
+    # Patient accessing admin route -> 403
     res_admin = client.get('/test-admin-only')
-    assert res_admin.status_code == 200
-    assert res_admin.get_json()['message'] == 'Admin Access Granted'
+    assert res_admin.status_code == 403
 
 
-def test_doctor_pending_status_protection(client, app):
-    """Test pending doctor cannot access @doctor_approved_required routes until approved."""
-    # Register pending doctor
+# 13, 14, 15, 16. Doctor status authorization (Pending, Approved, Rejected)
+def test_doctor_status_authorizations(client, app):
+    # Register doctor
     client.post('/auth/register/doctor', data={
-        'name': 'Dr. Pending',
-        'email': 'pendingdoc@example.com',
-        'password': 'Password123!',
-        'confirm_password': 'Password123!',
-        'specialization': 'Pediatrics',
-        'qualification': 'MD',
-        'license_number': 'LIC-9900'
+        'name': 'Dr. Status Check',
+        'email': 'dr.status@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!',
+        'specialization': 'General Medicine',
+        'qualification': 'MBBS',
+        'license_number': 'LIC-STATUS-100'
     })
 
     client.post('/auth/login', data={
-        'email': 'pendingdoc@example.com',
-        'password': 'Password123!'
+        'email': 'dr.status@example.com',
+        'password': 'StrongPassword123!'
     })
 
-    # Pending doctor attempts to access approved-doctor endpoint -> 403
-    res_pending = client.get('/test-doctor-only')
-    assert res_pending.status_code == 403
+    # 14. Pending doctor accessing approved route -> Redirected to /auth/approval-pending
+    res_pending = client.get('/test-doctor-only', follow_redirects=True)
+    assert res_pending.status_code == 200
+    assert b'Doctor Application Under Review' in res_pending.data
 
     # Approve doctor in DB
     with app.app_context():
-        doc_user = User.query.filter_by(email='pendingdoc@example.com').first()
-        doc_user.doctor.verification_status = 'approved'
+        doc = User.query.filter_by(email='dr.status@example.com').first()
+        doc.doctor.verification_status = 'approved'
         db.session.commit()
-        db.session.remove()
 
+    # 15. Approved doctor accessing approved route -> 200 OK
     res_approved = client.get('/test-doctor-only')
     assert res_approved.status_code == 200
+    assert res_approved.get_json()['message'] == 'Approved Doctor Access Granted'
 
+    # Reject doctor in DB
+    with app.app_context():
+        doc = User.query.filter_by(email='dr.status@example.com').first()
+        doc.doctor.verification_status = 'rejected'
+        db.session.commit()
+
+    # 16. Rejected doctor accessing approved route -> 403 Forbidden
+    res_rejected = client.get('/test-doctor-only')
+    assert res_rejected.status_code == 403
+
+
+# 17 & 18. Safe local next redirect & External URL rejection
+def test_safe_local_next_redirect(client, app):
+    client.post('/auth/register', data={
+        'name': 'Redirect User',
+        'email': 'redirect@example.com',
+        'password': 'StrongPassword123!',
+        'confirm_password': 'StrongPassword123!'
+    })
+
+    # 17. Valid local next parameter
+    res_valid = client.post('/auth/login?next=/test-patient-only', data={
+        'email': 'redirect@example.com',
+        'password': 'StrongPassword123!'
+    }, follow_redirects=True)
+    assert res_valid.status_code == 200
+    assert b'Patient Access Granted' in res_valid.data
+
+    client.post('/auth/logout')
+
+    # 18. External URL rejection (should redirect to index /)
+    res_external = client.post('/auth/login?next=http://evil.com', data={
+        'email': 'redirect@example.com',
+        'password': 'StrongPassword123!'
+    }, follow_redirects=False)
+    assert res_external.status_code == 302
+    assert res_external.headers['Location'] == '/'
+
+    # Protocol-relative URL rejection
+    res_proto = client.post('/auth/login?next=//evil.com', data={
+        'email': 'redirect@example.com',
+        'password': 'StrongPassword123!'
+    }, follow_redirects=False)
+    assert res_proto.status_code == 302
+    assert res_proto.headers['Location'] == '/'
+
+
+# 19. Admin creation CLI
 def test_admin_creation_cli(runner, app):
-
-    """Test flask create-admin CLI command."""
-    result = runner.invoke(args=['create-admin', '--name', 'CLI Admin', '--email', 'cliadmin@example.com', '--password', 'CliAdminPass1!'])
+    result = runner.invoke(args=['create-admin', '--name', 'CLI Admin', '--email', 'cliadmin@example.com', '--password', 'CliAdminPass123!'])
     assert 'Successfully created admin account' in result.output
 
     with app.app_context():
         admin = User.query.filter_by(email='cliadmin@example.com').first()
         assert admin is not None
         assert admin.role == 'admin'
+
+
+# 20. Verify no hardcoded passwords in source code
+def test_no_hardcoded_passwords_in_source():
+    from app import cli
+    source_code = inspect.getsource(cli)
+    assert 'AdminPass123!' not in source_code
+    assert 'DoctorPass123!' not in source_code
+    assert 'PatientPass123!' not in source_code

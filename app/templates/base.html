@@ -43,9 +43,13 @@
                                 <span class="badge bg-success rounded-pill">Patient</span>
                             {% endif %}
                         </div>
-                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
+                        <form method="POST" action="{{ url_for('auth.logout') }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                                <i class="bi bi-box-arrow-right me-1"></i> Logout
+                            </button>
+                        </form>
+
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light rounded-pill px-3">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Login

@@ -37,7 +37,9 @@ def doctor_approved_required(f):
             abort(403)
 
         if not current_user.doctor or current_user.doctor.verification_status != 'approved':
-            flash('Your doctor account is pending admin approval.', 'warning')
+            if current_user.doctor and current_user.doctor.verification_status == 'pending':
+                flash('Your doctor account is currently pending admin approval.', 'warning')
+                return redirect(url_for('auth.approval_pending'))
             abort(403)
 
         return f(*args, **kwargs)

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-primary mb-1"><i class="bi bi-shield-lock me-2"></i>Administrator Portal</h2>
+        <p class="text-secondary mb-0">System overview, doctor verification management, and appointment controls.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('department.create') }}" class="btn btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-plus-lg me-1"></i> Add Department
+        </a>
+        <a href="{{ url_for('admin.appointments') }}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-list-check me-1"></i> View All Appointments
+        </a>
+    </div>
+</div>
+
+<!-- Admin Metrics -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 text-uppercase fw-bold small mb-1">Approved Doctors</h6>
+                    <h3 class="fw-bold mb-0">{{ approved_doctors|length }}</h3>
+                </div>
+                <div class="fs-1 text-white-50"><i class="bi bi-person-check-fill"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-dark-50 text-uppercase fw-bold small mb-1">Pending Doctors</h6>
+                    <h3 class="fw-bold mb-0">{{ pending_doctors|length }}</h3>
+                </div>
+                <div class="fs-1 text-dark-50"><i class="bi bi-person-exclamation"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-info text-dark p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-dark-50 text-uppercase fw-bold small mb-1">Total Patients</h6>
+                    <h3 class="fw-bold mb-0">{{ patient_count }}</h3>
+                </div>
+                <div class="fs-1 text-dark-50"><i class="bi bi-people-fill"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-success text-white p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 text-uppercase fw-bold small mb-1">Total Appointments</h6>
+                    <h3 class="fw-bold mb-0">{{ total_appointments }}</h3>
+                </div>
+                <div class="fs-1 text-white-50"><i class="bi bi-journal-check"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Doctor Approvals Queue (Phase 2 feature integrated) -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-bottom p-4">
+        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-person-gear me-2"></i>Doctor Registration Verification Queue</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Doctor Name</th>
+                        <th>Specialization</th>
+                        <th>License Number</th>
+                        <th>Qualification</th>
+                        <th class="text-end pe-4">Approve / Reject</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in pending_doctors %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ doc.user.name }}</div>
+                                <small class="text-muted">{{ doc.user.email }}</small>
+                            </td>
+                            <td>{{ doc.specialization }}</td>
+                            <td><code>{{ doc.license_number }}</code></td>
+                            <td>{{ doc.qualification }}</td>
+                            <td class="text-end pe-4">
+                                <form method="POST" action="{{ url_for('admin.approve_doctor', id=doc.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 me-1">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.reject_doctor', id=doc.id) }}" class="d-inline" onsubmit="return confirm('Reject doctor application?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No pending doctor registrations in queue.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent System Appointments -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-2"></i>Recent System Appointments</h5>
+        <a href="{{ url_for('admin.appointments') }}" class="btn btn-outline-primary btn-sm rounded-pill">View All Filters</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date & Time</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in recent_appointments %}
+                        <tr>
+                            <td class="ps-4">
+                                <div>{{ apt.appointment_date.strftime('%b %d, %Y') }}</div>
+                                <small class="text-muted">{{ apt.appointment_time.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>{{ apt.patient.user.name }}</td>
+                            <td>{{ apt.doctor.user.name }}</td>
+                            <td>{{ apt.department.name if apt.department else "General" }}</td>
+                            <td>
+                                {% if apt.status == 'Approved' %}
+                                    <span class="badge bg-success rounded-pill">Approved</span>
+                                {% elif apt.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+                                {% elif apt.status == 'Cancelled' %}
+                                    <span class="badge bg-secondary rounded-pill">Cancelled</span>
+                                {% elif apt.status == 'Rejected' %}
+                                    <span class="badge bg-danger rounded-pill">Rejected</span>
+                                {% elif apt.status == 'Completed' %}
+                                    <span class="badge bg-info text-dark rounded-pill">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('admin.appointment_detail', id=apt.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">View</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No appointments found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

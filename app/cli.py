@@ -1,11 +1,14 @@
 import os
 import click
-from datetime import date
+from datetime import date, time, timedelta
 from flask.cli import AppGroup
 from app.extensions import db
 from app.models.user import User
 from app.models.patient import Patient
 from app.models.doctor import Doctor
+from app.models.department import Department
+from app.models.availability import DoctorAvailability
+from app.models.appointment import Appointment
 from app.utils.security import validate_password_strength
 
 admin_cli = AppGroup('admin', help='Admin management commands.')
@@ -48,7 +51,7 @@ def register_cli_commands(app):
 
     @app.cli.command('seed-db')
     def seed_db():
-        """Seeds initial development data (1 admin, 1 approved doctor, 1 pending doctor, 1 patient)."""
+        """Seeds initial development data including departments, doctors, slots, and appointments."""
         click.echo('Seeding database with test records...')
 
         admin_pass = os.environ.get('SEED_ADMIN_PASSWORD')
@@ -61,6 +64,28 @@ def register_cli_commands(app):
             doctor_pass = click.prompt('Enter password for SEED Doctors', hide_input=True)
         if not patient_pass:
             patient_pass = click.prompt('Enter password for SEED Patient', hide_input=True)
+
+        # 0. Seed Departments
+        dept_names = [
+            ('General Medicine', 'Primary healthcare and general medical consultations.'),
+            ('Cardiology', 'Heart and cardiovascular system care.'),
+            ('Dermatology', 'Skin, hair, and nail treatments.'),
+            ('Pediatrics', 'Comprehensive healthcare for infants, children, and adolescents.'),
+            ('Orthopedics', 'Musculoskeletal system, bone, and joint care.'),
+            ('Gynecology', 'Female reproductive health services.'),
+            ('Neurology', 'Brain, spinal cord, and nervous system disorders.'),
+            ('Dentistry', 'Oral health and dental care services.')
+        ]
+
+        dept_map = {}
+        for name, desc in dept_names:
+            dept = Department.query.filter_by(name=name).first()
+            if not dept:
+                dept = Department(name=name, description=desc)
+                db.session.add(dept)
+                click.echo(f' - Created Department ({name})')
+            dept_map[name] = dept
+        db.session.flush()
 
         # 1. Seed Admin
         admin = User.query.filter_by(email='admin@medcare.com').first()
@@ -80,6 +105,7 @@ def register_cli_commands(app):
 
             doc1_profile = Doctor(
                 user_id=doc1_user.id,
+                department_id=dept_map['Cardiology'].id,
                 specialization='Cardiology',
                 qualification='MD, FACC',
                 license_number='MED-1001',
@@ -90,6 +116,8 @@ def register_cli_commands(app):
             )
             db.session.add(doc1_profile)
             click.echo(' - Created Approved Doctor (dr.smith@medcare.com)')
+        else:
+            doc1_profile = doc1_user.doctor
 
         # 3. Seed Pending Doctor
         doc2_user = User.query.filter_by(email='dr.johnson@medcare.com').first()
@@ -101,6 +129,7 @@ def register_cli_commands(app):
 
             doc2_profile = Doctor(
                 user_id=doc2_user.id,
+                department_id=dept_map['Pediatrics'].id,
                 specialization='Pediatrics',
                 qualification='MBBS, DCH',
                 license_number='MED-1002',
@@ -131,6 +160,59 @@ def register_cli_commands(app):
             )
             db.session.add(pat_profile)
             click.echo(' - Created Patient (patient@medcare.com)')
+        else:
+            pat_profile = pat_user.patient
+
+        db.session.flush()
+
+        # 5. Seed Slots & Appointments for Approved Doctor
+        if doc1_profile:
+            tomorrow = date.today() + timedelta(days=1)
+
+            # Slot 1
+            slot1 = DoctorAvailability.query.filter_by(doctor_id=doc1_profile.id, date=tomorrow, start_time=time(10, 0)).first()
+            if not slot1:
+                slot1 = DoctorAvailability(
+                    doctor_id=doc1_profile.id,
+                    date=tomorrow,
+                    start_time=time(10, 0),
+                    end_time=time(10, 30),
+                    appointment_type='In-Person',
+                    is_available=False
+                )
+                db.session.add(slot1)
+
+            # Slot 2
+            slot2 = DoctorAvailability.query.filter_by(doctor_id=doc1_profile.id, date=tomorrow, start_time=time(11, 0)).first()
+            if not slot2:
+                slot2 = DoctorAvailability(
+                    doctor_id=doc1_profile.id,
+                    date=tomorrow,
+                    start_time=time(11, 0),
+                    end_time=time(11, 30),
+                    appointment_type='Video',
+                    is_available=True
+                )
+                db.session.add(slot2)
+
+            db.session.flush()
+
+            # Seed sample pending appointment
+            existing_apt = Appointment.query.filter_by(patient_id=pat_profile.id, doctor_id=doc1_profile.id, appointment_date=tomorrow).first()
+            if not existing_apt:
+                apt = Appointment(
+                    patient_id=pat_profile.id,
+                    doctor_id=doc1_profile.id,
+                    department_id=dept_map['Cardiology'].id,
+                    appointment_date=tomorrow,
+                    appointment_time=time(10, 0),
+                    appointment_type='In-Person',
+                    status='Pending',
+                    payment_status='Pending',
+                    consultation_notes='Routine cardiac checkup request.'
+                )
+                db.session.add(apt)
+                click.echo(' - Created Sample Appointment')
 
         try:
             db.session.commit()

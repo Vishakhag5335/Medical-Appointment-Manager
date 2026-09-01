@@ -25,9 +25,13 @@ def create_app(config_name=None):
     setup_logging(app)
 
     # Register blueprints
-    from app.routes import main_bp, auth_bp
+    from app.routes import main_bp, auth_bp, department_bp, patient_bp, doctor_bp, admin_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(department_bp)
+    app.register_blueprint(patient_bp)
+    app.register_blueprint(doctor_bp)
+    app.register_blueprint(admin_bp)
 
 
     # Register CLI commands

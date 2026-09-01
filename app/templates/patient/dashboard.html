@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Dashboard - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-primary mb-1">Welcome back, {{ current_user.name }}!</h2>
+        <p class="text-secondary mb-0">Manage your medical appointments and healthcare consultations.</p>
+    </div>
+    <a href="{{ url_for('patient.book') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-4 shadow-sm">
+        <i class="bi bi-calendar-plus me-1"></i> Book New Appointment
+    </a>
+</div>
+
+<!-- Overview Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 text-uppercase fw-bold mb-1">Upcoming</h6>
+                    <h2 class="display-5 fw-bold mb-0">{{ upcoming_count }}</h2>
+                </div>
+                <div class="fs-1 text-white-50"><i class="bi bi-calendar-event"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-dark-50 text-uppercase fw-bold mb-1">Pending Approval</h6>
+                    <h2 class="display-5 fw-bold mb-0">{{ pending_count }}</h2>
+                </div>
+                <div class="fs-1 text-dark-50"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-success text-white p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 text-uppercase fw-bold mb-1">Total History</h6>
+                    <h2 class="display-5 fw-bold mb-0">{{ recent_appointments|length }}</h2>
+                </div>
+                <div class="fs-1 text-white-50"><i class="bi bi-check-circle"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Appointments Table -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+        <h4 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-2"></i>Upcoming Appointments</h4>
+        <a href="{{ url_for('patient.appointments') }}" class="btn btn-outline-primary btn-sm rounded-pill">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date & Time</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in upcoming_appointments %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ apt.appointment_date.strftime('%b %d, %Y') }}</div>
+                                <small class="text-muted">{{ apt.appointment_time.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ apt.doctor.user.name }}</div>
+                                <small class="text-muted">{{ apt.doctor.specialization }}</small>
+                            </td>
+                            <td>{{ apt.department.name if apt.department else "General" }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-info text-dark' if apt.appointment_type == 'Video' else 'bg-secondary' }} rounded-pill">
+                                    {{ apt.appointment_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if apt.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark rounded-pill">Pending Approval</span>
+                                {% elif apt.status == 'Approved' %}
+                                    <span class="badge bg-success rounded-pill">Approved</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('patient.appointment_detail', id=apt.id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1">Details</a>
+                                <form method="POST" action="{{ url_for('patient.cancel_appointment', id=apt.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Cancel</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No upcoming appointments scheduled.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

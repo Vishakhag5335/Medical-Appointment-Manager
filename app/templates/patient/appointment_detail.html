@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Details #{{ appointment.id }} - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-3">
+            <a href="{{ url_for('patient.appointments') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i> Back to My Appointments
+            </a>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="fw-bold mb-0">Appointment #{{ appointment.id }}</h4>
+                    <small class="text-white-50">Booked on {{ appointment.created_at.strftime('%B %d, %Y') }}</small>
+                </div>
+                <div>
+                    {% if appointment.status == 'Pending' %}
+                        <span class="badge bg-warning text-dark fs-6 rounded-pill px-3">Pending Doctor Approval</span>
+                    {% elif appointment.status == 'Approved' %}
+                        <span class="badge bg-success fs-6 rounded-pill px-3">Approved</span>
+                    {% elif appointment.status == 'Cancelled' %}
+                        <span class="badge bg-secondary fs-6 rounded-pill px-3">Cancelled</span>
+                    {% elif appointment.status == 'Rejected' %}
+                        <span class="badge bg-danger fs-6 rounded-pill px-3">Rejected</span>
+                    {% elif appointment.status == 'Completed' %}
+                        <span class="badge bg-info text-dark fs-6 rounded-pill px-3">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted text-uppercase fw-bold small">Appointment Date & Time</h6>
+                            <p class="fs-5 fw-bold text-primary mb-1">{{ appointment.appointment_date.strftime('%A, %B %d, %Y') }}</p>
+                            <p class="mb-0 text-secondary"><i class="bi bi-clock me-1"></i> {{ appointment.appointment_time.strftime('%I:%M %p') }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted text-uppercase fw-bold small">Consultation Type</h6>
+                            <p class="fs-5 fw-bold text-dark mb-1">{{ appointment.appointment_type }}</p>
+                            <p class="mb-0 text-secondary"><i class="bi bi-tag me-1"></i> Fee: ${{ "%.2f"|format(appointment.doctor.consultation_fee) if appointment.doctor.consultation_fee else "N/A" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-badge me-2"></i>Doctor Details</h5>
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle fs-3 fw-bold">
+                        <i class="bi bi-person-heart"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ appointment.doctor.user.name }}</h5>
+                        <p class="text-secondary mb-0">{{ appointment.doctor.specialization }} | {{ appointment.doctor.qualification }}</p>
+                        <small class="text-muted">License: {{ appointment.doctor.license_number }}</small>
+                    </div>
+                </div>
+
+                {% if appointment.consultation_notes %}
+                    <div class="alert alert-info rounded-3 p-3">
+                        <h6 class="fw-bold text-info-emphasis mb-2"><i class="bi bi-journal-text me-1"></i> Doctor's Consultation Notes:</h6>
+                        <p class="mb-0 text-dark">{{ appointment.consultation_notes }}</p>
+                    </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    {% if appointment.status in ['Pending', 'Approved'] %}
+                        <form method="POST" action="{{ url_for('patient.cancel_appointment', id=appointment.id) }}" onsubmit="return confirm('Confirm cancelling this appointment?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger rounded-pill px-4">Cancel Appointment</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}All Appointments - MedCare Manager Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-primary mb-1"><i class="bi bi-list-check me-2"></i>All System Appointments</h2>
+        <p class="text-secondary mb-0">Search, filter, and inspect appointment records across all departments.</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4">Back to Dashboard</a>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="{{ url_for('admin.appointments') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    {{ form.department_id.label(class="form-label fw-semibold small") }}
+                    {{ form.department_id(class="form-select form-select-sm") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.doctor_id.label(class="form-label fw-semibold small") }}
+                    {{ form.doctor_id(class="form-select form-select-sm") }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.status.label(class="form-label fw-semibold small") }}
+                    {{ form.status(class="form-select form-select-sm") }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.appointment_type.label(class="form-label fw-semibold small") }}
+                    {{ form.appointment_type(class="form-select form-select-sm") }}
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    {{ form.submit(class="btn btn-primary btn-sm rounded-pill w-100 fw-semibold") }}
+                    <a href="{{ url_for('admin.appointments') }}" class="btn btn-outline-secondary btn-sm rounded-pill">Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Appointments Table -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Date & Time</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in appointments %}
+                        <tr>
+                            <td class="ps-4 font-monospace small">#{{ apt.id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ apt.appointment_date.strftime('%b %d, %Y') }}</div>
+                                <small class="text-muted">{{ apt.appointment_time.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ apt.patient.user.name }}</div>
+                                <small class="text-muted">{{ apt.patient.user.email }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ apt.doctor.user.name }}</div>
+                                <small class="text-muted">{{ apt.doctor.specialization }}</small>
+                            </td>
+                            <td>{{ apt.department.name if apt.department else "General" }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ apt.appointment_type }}</span></td>
+                            <td>
+                                {% if apt.status == 'Approved' %}
+                                    <span class="badge bg-success rounded-pill">Approved</span>
+                                {% elif apt.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+                                {% elif apt.status == 'Cancelled' %}
+                                    <span class="badge bg-secondary rounded-pill">Cancelled</span>
+                                {% elif apt.status == 'Rejected' %}
+                                    <span class="badge bg-danger rounded-pill">Rejected</span>
+                                {% elif apt.status == 'Completed' %}
+                                    <span class="badge bg-info text-dark rounded-pill">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('admin.appointment_detail', id=apt.id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View Details</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No appointments matching the specified filter criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

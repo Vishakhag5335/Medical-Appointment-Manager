@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Appointment Inspection #{{ appointment.id }} - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="mb-3">
+            <a href="{{ url_for('admin.appointments') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i> Back to Appointments List
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-dark text-white p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="fw-bold mb-0">System Inspection: Appointment #{{ appointment.id }}</h4>
+                    <small class="text-white-50">Created on {{ appointment.created_at.strftime('%Y-%m-%d %H:%M UTC') }}</small>
+                </div>
+                <div>
+                    <span class="badge bg-primary fs-6 rounded-pill px-3">{{ appointment.status }}</span>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-4 mb-4">
+                    <!-- Patient Card -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-4 bg-light">
+                            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-person me-1"></i>Patient Profile</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ appointment.patient.user.name }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ appointment.patient.user.email }}</p>
+                            <p class="mb-0"><strong>Emergency Contact:</strong> {{ appointment.patient.emergency_contact_phone if appointment.patient.emergency_contact_phone else "N/A" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Doctor Card -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-4 bg-light">
+                            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-person-badge me-1"></i>Doctor Profile</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ appointment.doctor.user.name }}</p>
+                            <p class="mb-1"><strong>Specialization:</strong> {{ appointment.doctor.specialization }}</p>
+                            <p class="mb-0"><strong>License:</strong> <code>{{ appointment.doctor.license_number }}</code></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border rounded-4 p-3 bg-body-tertiary">
+                    <h6 class="fw-bold text-primary mb-2"><i class="bi bi-calendar-event me-1"></i>Schedule Details</h6>
+                    <p class="mb-1"><strong>Department:</strong> {{ appointment.department.name if appointment.department else "General Medicine" }}</p>
+                    <p class="mb-1"><strong>Date & Time:</strong> {{ appointment.appointment_date.strftime('%Y-%m-%d') }} at {{ appointment.appointment_time.strftime('%H:%M') }}</p>
+                    <p class="mb-1"><strong>Consultation Type:</strong> {{ appointment.appointment_type }}</p>
+                    <p class="mb-1"><strong>Payment Status:</strong> {{ appointment.payment_status }}</p>
+                    <p class="mb-0"><strong>Consultation Notes:</strong> {{ appointment.consultation_notes if appointment.consultation_notes else "None recorded." }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

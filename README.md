@@ -94,6 +94,33 @@ medical_appointment_manager/
   - `flask create-admin`: Interactively creates administrator accounts without hardcoded credentials.
   - `flask seed-db`: Seeds development test accounts reading passwords dynamically from environment variables (`SEED_ADMIN_PASSWORD`, `SEED_DOCTOR_PASSWORD`, `SEED_PATIENT_PASSWORD`).
 
+### Phase 3: Appointment Management Core
+- **Department Management**:
+  - `Department` model for clinical specialty categorization (`General Medicine`, `Cardiology`, `Dermatology`, `Pediatrics`, `Orthopedics`, `Gynecology`, `Neurology`, `Dentistry`).
+  - Unique name enforcement and database relationship linking doctors to departments.
+- **Doctor Availability & Slot Publishing**:
+  - `DoctorAvailability` model for doctor slot management.
+  - Supports `In-Person` and `Video Consultation` appointment types.
+  - Overlap validation logic preventing past dates, invalid time ranges (start >= end), and overlapping slots.
+- **Appointment Model & Status Lifecycle**:
+  - `Appointment` core model linking patients, approved doctors, and departments.
+  - Status tracking (`Pending`, `Approved`, `Rejected`, `Cancelled`, `Completed`).
+  - Payment status tracking (`Pending`, `Paid`, `Not Required`).
+  - Validation enforcing future booking, double-booking prevention, and slot availability updates.
+- **Patient Booking & Management Flow**:
+  - Patient dashboard showing upcoming consultations, pending requests, and appointment count metrics.
+  - Multi-step interactive booking form with department and doctor filtering API.
+  - View appointment details and patient cancellation flow with automatic availability slot restoration.
+- **Doctor Consultation Management**:
+  - Doctor dashboard showing today's consultations, pending booking approvals queue, and upcoming appointments.
+  - One-click Approve and Reject actions for pending appointment requests.
+  - Ability to add and update clinical consultation notes.
+- **Admin Support & Filtering**:
+  - Admin dashboard and all-appointments view with multi-criteria filtering by Doctor, Patient, Department, Status, and Appointment Type.
+- **Automated Test Coverage**:
+  - Unit and integration tests covering department creation, slot publishing, overlap prevention, appointment booking, past date prevention, double-booking prevention, patient cancellation, doctor approvals/rejections, and role authorization.
+
+
 ---
 
 ## Getting Started

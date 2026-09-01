@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ department.name }} - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('department.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Departments
+    </a>
+    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-white text-primary p-3 rounded-circle fs-2">
+                <i class="bi bi-building"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">{{ department.name }}</h2>
+                <p class="mb-0 opacity-75">{{ department.description if department.description else "Specialized clinical department." }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="fw-bold text-primary mb-3"><i class="bi bi-person-badge me-2"></i>Doctors in this Department</h4>
+
+<div class="row g-4">
+    {% for doctor in doctors %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-info-subtle text-info-emphasis p-3 rounded-circle fs-3 fw-bold">
+                            <i class="bi bi-person-fill-check"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">{{ doctor.user.name }}</h5>
+                            <span class="badge bg-primary rounded-pill small">{{ doctor.qualification }}</span>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-2"><i class="bi bi-award me-1"></i> <strong>Experience:</strong> {{ doctor.experience_years if doctor.experience_years else "N/A" }} years</p>
+                    <p class="text-muted small mb-2"><i class="bi bi-cash-stack me-1"></i> <strong>Fee:</strong> ${{ "%.2f"|format(doctor.consultation_fee) if doctor.consultation_fee else "N/A" }}</p>
+                    <p class="text-secondary small mb-3">{{ doctor.bio if doctor.bio else "No bio provided." }}</p>
+                    
+                    {% if current_user.is_authenticated and current_user.role == 'patient' %}
+                        <a href="{{ url_for('patient.book', doctor_id=doctor.id) }}" class="btn btn-warning text-dark btn-sm rounded-pill w-100 fw-semibold">
+                            <i class="bi bi-calendar-check me-1"></i> Book Appointment
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-secondary rounded-4 text-center p-4">
+                <p class="mb-0">No approved doctors currently listed in this department.</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

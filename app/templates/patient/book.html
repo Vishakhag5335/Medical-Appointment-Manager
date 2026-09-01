@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Book Appointment - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-primary text-white p-4 rounded-top-4">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2"></i>Book a Medical Appointment</h4>
+                <p class="mb-0 text-white-50 small">Select a clinical department, available doctor, date, and preferred time slot.</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patient.book') }}" id="bookingForm">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            {{ form.department_id.label(class="form-label fw-semibold") }}
+                            {{ form.department_id(class="form-select" + (" is-invalid" if form.department_id.errors else ""), id="departmentSelect") }}
+                            {% for error in form.department_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ form.doctor_id.label(class="form-label fw-semibold") }}
+                            {{ form.doctor_id(class="form-select" + (" is-invalid" if form.doctor_id.errors else ""), id="doctorSelect") }}
+                            {% for error in form.doctor_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            {{ form.appointment_type.label(class="form-label fw-semibold") }}
+                            {{ form.appointment_type(class="form-select" + (" is-invalid" if form.appointment_type.errors else "")) }}
+                            {% for error in form.appointment_type.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            {{ form.appointment_date.label(class="form-label fw-semibold") }}
+                            {{ form.appointment_date(class="form-control" + (" is-invalid" if form.appointment_date.errors else ""), type="date", id="dateInput") }}
+                            {% for error in form.appointment_date.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            {{ form.appointment_time.label(class="form-label fw-semibold") }}
+                            {{ form.appointment_time(class="form-control" + (" is-invalid" if form.appointment_time.errors else ""), type="time", id="timeInput") }}
+                            {% for error in form.appointment_time.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Available Slots Container -->
+                    <div id="slotsContainer" class="mb-4 d-none">
+                        <label class="form-label fw-semibold text-primary"><i class="bi bi-clock me-1"></i>Available Published Slots:</label>
+                        <div id="slotsList" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.notes.label(class="form-label fw-semibold") }}
+                        {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=3, placeholder="Describe any symptoms or reason for visit (optional)...") }}
+                        {% for error in form.notes.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                        {{ form.submit(class="btn btn-warning text-dark fw-bold rounded-pill px-4 shadow-sm") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deptSelect = document.getElementById('departmentSelect');
+    const docSelect = document.getElementById('doctorSelect');
+    const dateInput = document.getElementById('dateInput');
+    const timeInput = document.getElementById('timeInput');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const slotsList = document.getElementById('slotsList');
+    const slotIdInput = document.getElementById('slot_id');
+
+    // Set min date to today
+    const todayStr = new Date().toISOString().split('T')[0];
+    dateInput.min = todayStr;
+
+    deptSelect.addEventListener('change', function() {
+        const deptId = this.value;
+        if (deptId && deptId > 0) {
+            fetch(`/patient/api/doctors/${deptId}`)
+                .then(r => r.json())
+                .then(doctors => {
+                    docSelect.innerHTML = '<option value="0">-- Select Doctor --</option>';
+                    doctors.forEach(d => {
+                        docSelect.innerHTML += `<option value="${d.id}">${d.name} (${d.specialization}) - $${d.consultation_fee}</option>`;
+                    });
+                });
+        }
+    });
+
+    function loadSlots() {
+        const docId = docSelect.value;
+        const dateVal = dateInput.value;
+        if (docId > 0) {
+            fetch(`/patient/api/slots/${docId}?date=${dateVal || ''}`)
+                .then(r => r.json())
+                .then(slots => {
+                    if (slots.length > 0) {
+                        slotsContainer.classList.remove('d-none');
+                        slotsList.innerHTML = '';
+                        slots.forEach(s => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn btn-outline-primary btn-sm rounded-pill';
+                            btn.innerHTML = `${s.date} | ${s.start_time} (${s.appointment_type})`;
+                            btn.onclick = function() {
+                                dateInput.value = s.date;
+                                timeInput.value = s.start_time;
+                                if (slotIdInput) slotIdInput.value = s.id;
+                                document.querySelectorAll('#slotsList button').forEach(b => b.classList.replace('btn-primary', 'btn-outline-primary'));
+                                btn.classList.replace('btn-outline-primary', 'btn-primary');
+                            };
+                            slotsList.appendChild(btn);
+                        });
+                    } else {
+                        slotsContainer.classList.add('d-none');
+                    }
+                });
+        } else {
+            slotsContainer.classList.add('d-none');
+        }
+    }
+
+    docSelect.addEventListener('change', loadSlots);
+    dateInput.addEventListener('change', loadSlots);
+});
+</script>
+{% endblock %}

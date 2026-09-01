@@ -27,9 +27,45 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('main.index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('main.index') }}"><i class="bi bi-house-door me-1"></i> Home</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('department.index') }}"><i class="bi bi-hospital me-1"></i> Departments</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'patient' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.book') }}"><i class="bi bi-calendar-plus me-1"></i> Book Appointment</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.appointments') }}"><i class="bi bi-journal-medical me-1"></i> My Appointments</a>
+                            </li>
+                        {% elif current_user.role == 'doctor' %}
+                            {% if current_user.doctor and current_user.doctor.verification_status == 'approved' %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('doctor.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Doctor Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('doctor.slots') }}"><i class="bi bi-clock-history me-1"></i> Manage Slots</a>
+                                </li>
+                            {% endif %}
+                        {% elif current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Admin Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin.appointments') }}"><i class="bi bi-list-check me-1"></i> All Appointments</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('department.create') }}"><i class="bi bi-plus-circle me-1"></i> Add Department</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
                 </ul>
+
                 <div class="d-flex align-items-center gap-3">
                     {% if current_user.is_authenticated %}
                         <div class="d-flex align-items-center gap-2 text-white">

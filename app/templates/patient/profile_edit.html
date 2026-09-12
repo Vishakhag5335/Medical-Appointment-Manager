@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Health Profile - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h3 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2"></i>Update Health Profile</h3>
+                    <a href="{{ url_for('patient.view_profile') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Profile
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patient.edit_profile') }}" enctype="multipart/form-data" novalidate>
+                    {{ form.csrf_token }}
+
+                    <!-- Profile Photo Upload -->
+                    <div class="mb-4 text-center">
+                        <div class="mb-3">
+                            {% if patient.profile_photo %}
+                                <img src="{{ url_for('patient.profile_photo', filename=patient.profile_photo) }}" alt="Profile Photo" class="rounded-circle img-thumbnail border-3 border-primary shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light text-primary d-inline-flex align-items-center justify-content-center border shadow-sm" style="width: 100px; height: 100px;">
+                                    <i class="bi bi-person-fill display-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8 mx-auto">
+                            <label for="profile_photo" class="form-label fw-semibold text-secondary">
+                                <i class="bi bi-camera me-1"></i> {{ form.profile_photo.label.text }}
+                            </label>
+                            {{ form.profile_photo(class="form-control" + (" is-invalid" if form.profile_photo.errors else "")) }}
+                            {% if form.profile_photo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.profile_photo.errors[0] }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">Allowed formats: JPG, JPEG, PNG (Max 16MB)</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Personal Information Row -->
+                    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-vcard me-2"></i>Personal Details</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="date_of_birth" class="form-label fw-semibold text-secondary">{{ form.date_of_birth.label.text }}</label>
+                            {{ form.date_of_birth(class="form-control" + (" is-invalid" if form.date_of_birth.errors else ""), type="date") }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback">{{ form.date_of_birth.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gender" class="form-label fw-semibold text-secondary">{{ form.gender.label.text }}</label>
+                            {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback">{{ form.gender.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Medical Information Row -->
+                    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-heart-pulse me-2"></i>Medical & Health Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="blood_group" class="form-label fw-semibold text-secondary">{{ form.blood_group.label.text }}</label>
+                            {{ form.blood_group(class="form-select" + (" is-invalid" if form.blood_group.errors else "")) }}
+                            {% if form.blood_group.errors %}
+                                <div class="invalid-feedback">{{ form.blood_group.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-12">
+                            <label for="allergies" class="form-label fw-semibold text-secondary">{{ form.allergies.label.text }}</label>
+                            {{ form.allergies(class="form-control" + (" is-invalid" if form.allergies.errors else ""), rows=3, placeholder="List any known food, drug, or environmental allergies...") }}
+                            {% if form.allergies.errors %}
+                                <div class="invalid-feedback">{{ form.allergies.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-12">
+                            <label for="medical_conditions" class="form-label fw-semibold text-secondary">{{ form.medical_conditions.label.text }}</label>
+                            {{ form.medical_conditions(class="form-control" + (" is-invalid" if form.medical_conditions.errors else ""), rows=3, placeholder="Describe pre-existing conditions, surgeries, or chronic illnesses...") }}
+                            {% if form.medical_conditions.errors %}
+                                <div class="invalid-feedback">{{ form.medical_conditions.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact Row -->
+                    <h5 class="fw-bold text-danger mb-3"><i class="bi bi-telephone-plus me-2"></i>Emergency Contact</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="emergency_contact_name" class="form-label fw-semibold text-secondary">{{ form.emergency_contact_name.label.text }}</label>
+                            {{ form.emergency_contact_name(class="form-control" + (" is-invalid" if form.emergency_contact_name.errors else ""), placeholder="Full name of contact person") }}
+                            {% if form.emergency_contact_name.errors %}
+                                <div class="invalid-feedback">{{ form.emergency_contact_name.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="emergency_contact_phone" class="form-label fw-semibold text-secondary">{{ form.emergency_contact_phone.label.text }}</label>
+                            {{ form.emergency_contact_phone(class="form-control" + (" is-invalid" if form.emergency_contact_phone.errors else ""), placeholder="+1 (555) 000-0000") }}
+                            {% if form.emergency_contact_phone.errors %}
+                                <div class="invalid-feedback">{{ form.emergency_contact_phone.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 mt-4">
+                        <a href="{{ url_for('patient.view_profile') }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                            <i class="bi bi-check-circle me-1"></i> {{ form.submit.label.text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

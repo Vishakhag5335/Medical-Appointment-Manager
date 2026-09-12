@@ -4,9 +4,12 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.appointment import Appointment
 from app.models.availability import DoctorAvailability
+from app.models.prescription import Prescription
 from app.forms.availability import DoctorAvailabilityForm
 from app.forms.appointment import ConsultationNotesForm
+from app.forms.prescription import PrescriptionForm
 from app.services.appointment_service import AppointmentService
+from app.services.prescription_service import PrescriptionService
 from app.utils.decorators import doctor_approved_required
 
 doctor_bp = Blueprint('doctor', __name__, url_prefix='/doctor')
@@ -184,3 +187,90 @@ def update_notes(id):
             flash(f'Error saving notes: {str(e)}', 'danger')
 
     return redirect(url_for('doctor.appointment_detail', id=appointment.id))
+
+
+@doctor_bp.route('/appointments/<int:id>/prescription', methods=['GET', 'POST'])
+@login_required
+@doctor_approved_required
+def create_prescription(id):
+    """Issue a digital prescription for an appointment."""
+    doctor = get_current_doctor()
+    appointment = db.session.get(Appointment, id)
+
+    if not appointment or appointment.doctor_id != doctor.id:
+        abort(403)
+
+    # Check if a prescription already exists for this appointment
+    if appointment.prescription:
+        flash('A prescription has already been issued for this appointment.', 'info')
+        return redirect(url_for('doctor.view_prescription', id=appointment.prescription.id))
+
+    form = PrescriptionForm()
+
+    if request.method == 'POST':
+        diagnosis = request.form.get('diagnosis', '').strip()
+        advice = request.form.get('advice', '').strip()
+
+        # Parse item arrays from form
+        med_names = request.form.getlist('medicine_name')
+        dosages = request.form.getlist('dosage')
+        frequencies = request.form.getlist('frequency')
+        durations = request.form.getlist('duration')
+        instructions_list = request.form.getlist('instructions')
+
+        items_data = []
+        for i in range(len(med_names)):
+            if med_names[i].strip():
+                items_data.append({
+                    'medicine_name': med_names[i].strip(),
+                    'dosage': dosages[i].strip() if i < len(dosages) else '',
+                    'frequency': frequencies[i].strip() if i < len(frequencies) else '',
+                    'duration': durations[i].strip() if i < len(durations) else '',
+                    'instructions': instructions_list[i].strip() if i < len(instructions_list) else ''
+                })
+
+        if not diagnosis:
+            flash('Doctor diagnosis is required.', 'danger')
+        elif not items_data:
+            flash('At least one medication item must be added to the prescription.', 'danger')
+        else:
+            success, result = PrescriptionService.create_prescription(
+                doctor=doctor,
+                patient_id=appointment.patient_id,
+                appointment_id=appointment.id,
+                diagnosis=diagnosis,
+                advice=advice,
+                items_data=items_data
+            )
+            if success:
+                flash('Digital prescription issued successfully!', 'success')
+                return redirect(url_for('doctor.view_prescription', id=result.id))
+            else:
+                flash(f'Failed to issue prescription: {result}', 'danger')
+
+    return render_template('doctor/create_prescription.html', form=form, appointment=appointment)
+
+
+@doctor_bp.route('/prescriptions', methods=['GET'])
+@login_required
+@doctor_approved_required
+def prescriptions():
+    """List all digital prescriptions issued by doctor."""
+    doctor = get_current_doctor()
+    prescription_list = PrescriptionService.get_doctor_prescriptions(doctor.id)
+    return render_template('doctor/prescriptions.html', prescriptions=prescription_list)
+
+
+@doctor_bp.route('/prescriptions/<int:id>', methods=['GET'])
+@login_required
+@doctor_approved_required
+def view_prescription(id):
+    """View digital prescription detail (Doctor view)."""
+    doctor = get_current_doctor()
+    prescription = db.session.get(Prescription, id)
+
+    if not prescription or prescription.doctor_id != doctor.id:
+        abort(403)
+
+    return render_template('prescription/detail.html', prescription=prescription)
+

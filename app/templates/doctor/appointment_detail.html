@@ -80,7 +80,31 @@
                     </div>
                 {% endif %}
 
+                <!-- Digital Prescription Section -->
+                {% if appointment.status in ['Approved', 'Completed'] %}
+                    <div class="card border-0 bg-primary-subtle rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1"><i class="bi bi-file-earmark-medical me-2"></i>Digital Prescription</h5>
+                                <small class="text-secondary">Issue medication items, dosage instructions, and doctor diagnosis.</small>
+                            </div>
+                            <div>
+                                {% if appointment.prescription %}
+                                    <a href="{{ url_for('doctor.view_prescription', id=appointment.prescription.id) }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View Issued Prescription
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('doctor.create_prescription', id=appointment.id) }}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                                        <i class="bi bi-file-earmark-plus me-1"></i> Issue Digital Prescription
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
                 <!-- Consultation Notes Form -->
+
                 <div class="card border-0 bg-light rounded-4 p-4">
                     <h5 class="fw-bold text-primary mb-3"><i class="bi bi-pencil-square me-2"></i>Consultation & Clinical Notes</h5>
                     <form method="POST" action="{{ url_for('doctor.update_notes', id=appointment.id) }}">

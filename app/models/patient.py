@@ -19,5 +19,22 @@ class Patient(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
+    @property
+    def profile_completion_percentage(self):
+        """Calculates profile completion percentage based on filled fields."""
+        fields = [
+            self.date_of_birth,
+            self.gender,
+            self.blood_group,
+            self.allergies,
+            self.medical_conditions,
+            self.emergency_contact_name,
+            self.emergency_contact_phone,
+            self.profile_photo
+        ]
+        filled = sum(1 for f in fields if f is not None and str(f).strip() != '')
+        return int(round((filled / len(fields)) * 100))
+
     def __repr__(self):
         return f'<Patient id={self.id} user_id={self.user_id}>'
+

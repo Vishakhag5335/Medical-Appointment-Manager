@@ -120,6 +120,26 @@ medical_appointment_manager/
 - **Automated Test Coverage**:
   - Unit and integration tests covering department creation, slot publishing, overlap prevention, appointment booking, past date prevention, double-booking prevention, patient cancellation, doctor approvals/rejections, and role authorization.
 
+### Phase 4 (Step 1): Patient Health Profile
+- **Health Profile Management**:
+  - Support for Blood group, Allergies, Medical conditions, Emergency contact name & phone, and Profile photo.
+  - One-to-one SQLAlchemy relationship linking `Patient` model to `User` without data redundancy.
+  - Calculated `profile_completion_percentage` property for profile progress tracking.
+- **Secure File Upload Handling**:
+  - Validates image file extensions (JPG, JPEG, PNG).
+  - Generates safe UUID-based filenames to prevent overwrites, path traversal attacks, and code execution.
+  - Stores profile photos in `uploads/profile_photos/` outside source tree.
+  - Secure `/patient/profile/photo/<filename>` endpoint with `os.path.basename` validation and login requirement.
+- **Role-Based Access Control & URL Protection**:
+  - Strict route decoration (`@login_required` and `@role_required('patient')`).
+  - Routes operate strictly on `current_user.patient` preventing unauthorized profile access via URL parameter manipulation.
+- **Dashboard Integration & Healthcare UI**:
+  - Responsive Bootstrap 5 profile view and edit templates.
+  - Patient dashboard Health Profile card showing completion percentage progress bar, blood group badge, and quick access.
+- **Automated Tests**:
+  - Comprehensive unit test suite in `tests/test_patient_profile.py` verifying profile viewing, updating, photo uploads, invalid format/blood group rejection, unauthenticated access denial, and role-based authorization.
+
+
 
 ---
 

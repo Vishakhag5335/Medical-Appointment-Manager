@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Digital Prescription #{{ prescription.id }} - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            <button onclick="window.print()" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
+                <i class="bi bi-printer me-1"></i> Print / Download PDF
+            </button>
+        </div>
+
+        <!-- Prescription Document Card -->
+        <div class="card border-0 shadow rounded-4 overflow-hidden bg-white p-4 p-md-5" id="printable-prescription">
+            <!-- Clinic / Hospital Header -->
+            <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                <div>
+                    <h3 class="fw-bold text-primary mb-1"><i class="bi bi-hospital me-2"></i>MedCare Medical Center</h3>
+                    <p class="text-secondary mb-0 small">123 Healthcare Boulevard, Medical District</p>
+                    <p class="text-secondary mb-0 small">Contact: +1 (800) 555-MEDCARE | support@medcare.com</p>
+                </div>
+                <div class="text-end">
+                    <div class="badge bg-primary fs-6 px-3 py-2 rounded-pill mb-2">Digital Prescription</div>
+                    <div class="fw-bold text-dark">Rx #{{ prescription.id }}</div>
+                    <small class="text-muted">Issued: {{ prescription.created_at.strftime('%B %d, %Y') }}</small>
+                </div>
+            </div>
+
+            <!-- Doctor & Patient Details Banner -->
+            <div class="row g-3 mb-4 p-3 rounded-3 bg-light border">
+                <div class="col-md-6 border-end-md">
+                    <h6 class="text-uppercase text-secondary fw-bold small mb-2"><i class="bi bi-person-badge text-primary me-1"></i> Prescribing Doctor</h6>
+                    <h5 class="fw-bold text-dark mb-1">Dr. {{ prescription.doctor.user.name }}</h5>
+                    <p class="mb-0 text-secondary small">{{ prescription.doctor.specialization }} &bull; {{ prescription.doctor.qualification }}</p>
+                    <small class="text-muted">License No: {{ prescription.doctor.license_number }}</small>
+                </div>
+                <div class="col-md-6 ps-md-4">
+                    <h6 class="text-uppercase text-secondary fw-bold small mb-2"><i class="bi bi-person-heart text-danger me-1"></i> Patient Information</h6>
+                    <h5 class="fw-bold text-dark mb-1">{{ prescription.patient.user.name }}</h5>
+                    <p class="mb-0 text-secondary small">
+                        Gender: <span class="text-capitalize">{{ prescription.patient.gender or 'N/A' }}</span> &bull; 
+                        DOB: {{ prescription.patient.date_of_birth.strftime('%Y-%m-%d') if prescription.patient.date_of_birth else 'N/A' }} &bull;
+                        Blood Group: <strong class="text-danger">{{ prescription.patient.blood_group or 'N/A' }}</strong>
+                    </p>
+                    <small class="text-muted">Email: {{ prescription.patient.user.email }}</small>
+                </div>
+            </div>
+
+            <!-- Diagnosis Section -->
+            <div class="mb-4">
+                <h6 class="fw-bold text-primary text-uppercase mb-2"><i class="bi bi-activity me-1"></i> Doctor Diagnosis</h6>
+                <div class="p-3 bg-body-tertiary rounded-3 border">
+                    <p class="mb-0 text-dark fw-semibold white-space-pre-line">{{ prescription.diagnosis }}</p>
+                </div>
+            </div>
+
+            <!-- Prescribed Medications Table -->
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="display-6 fw-bold text-primary me-2" style="font-family: serif;">Rx</span>
+                    <h5 class="fw-bold text-dark mb-0">Prescribed Medications</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary text-white">
+                            <tr>
+                                <th>#</th>
+                                <th>Medicine Name</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Duration</th>
+                                <th>Instructions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in prescription.items %}
+                                <tr>
+                                    <td class="fw-bold text-secondary">{{ loop.index }}</td>
+                                    <td class="fw-bold text-dark">{{ item.medicine_name }}</td>
+                                    <td><span class="badge bg-secondary rounded-pill">{{ item.dosage }}</span></td>
+                                    <td><span class="badge bg-info text-dark rounded-pill">{{ item.frequency }}</span></td>
+                                    <td>{{ item.duration }}</td>
+                                    <td class="text-secondary small">{{ item.instructions or '-' }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">No medications listed.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Clinical Advice / Notes -->
+            {% if prescription.advice %}
+                <div class="mb-4">
+                    <h6 class="fw-bold text-primary text-uppercase mb-2"><i class="bi bi-chat-left-text me-1"></i> Clinical Advice & General Instructions</h6>
+                    <div class="p-3 bg-light rounded-3 border">
+                        <p class="mb-0 text-dark white-space-pre-line">{{ prescription.advice }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Footer / Doctor Signature Placeholder -->
+            <div class="d-flex justify-content-between align-items-end pt-4 mt-4 border-top">
+                <small class="text-muted">This is a verified digital prescription generated via MedCare Manager.</small>
+                <div class="text-center">
+                    <div class="fw-bold text-dark border-bottom pb-1 mb-1 px-4 d-inline-block">Dr. {{ prescription.doctor.user.name }}</div>
+                    <small class="text-muted d-block">Authorized Practitioner Signature</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    nav, footer, .btn, .navbar, .alert {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+    }
+    #printable-prescription {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
+</style>
+{% endblock %}

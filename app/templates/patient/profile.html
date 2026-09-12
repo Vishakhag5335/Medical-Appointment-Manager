@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}My Health Profile - MedCare Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Profile Header Card -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-body p-4 bg-primary text-white">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+                    <div class="position-relative">
+                        {% if patient.profile_photo %}
+                            <img src="{{ url_for('patient.profile_photo', filename=patient.profile_photo) }}" alt="{{ current_user.name }}" class="rounded-circle img-thumbnail border-3 border-white shadow" style="width: 120px; height: 120px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center shadow" style="width: 120px; height: 120px;">
+                                <i class="bi bi-person-fill display-3"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-center text-md-start flex-grow-1">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-2">
+                            <h2 class="fw-bold mb-0">{{ current_user.name }}</h2>
+                            <a href="{{ url_for('patient.edit_profile') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-4 mt-3 mt-md-0 shadow-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Edit Health Profile
+                            </a>
+                        </div>
+                        <p class="text-white-50 mb-2"><i class="bi bi-envelope me-1"></i> {{ current_user.email }}</p>
+                        
+                        <!-- Profile Completion Progress Bar -->
+                        <div class="mt-3" style="max-width: 400px;">
+                            <div class="d-flex justify-content-between text-white-50 small mb-1">
+                                <span>Profile Completion</span>
+                                <span>{{ patient.profile_completion_percentage }}%</span>
+                            </div>
+                            <div class="progress rounded-pill bg-white-20" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ patient.profile_completion_percentage }}%;" aria-valuenow="{{ patient.profile_completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Basic Personal Details -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-person-vcard me-2"></i>Personal Details</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                <span class="text-secondary"><i class="bi bi-calendar3 me-2"></i>Date of Birth</span>
+                                <span class="fw-semibold">{{ patient.date_of_birth.strftime('%B %d, %Y') if patient.date_of_birth else 'Not specified' }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                <span class="text-secondary"><i class="bi bi-gender-ambiguous me-2"></i>Gender</span>
+                                <span class="fw-semibold text-capitalize">{{ patient.gender if patient.gender else 'Not specified' }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                <span class="text-secondary"><i class="bi bi-droplet-fill text-danger me-2"></i>Blood Group</span>
+                                {% if patient.blood_group %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2 fs-6">{{ patient.blood_group }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">Not specified</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact Information -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="fw-bold text-danger mb-0"><i class="bi bi-telephone-plus me-2"></i>Emergency Contact</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                <span class="text-secondary"><i class="bi bi-person me-2"></i>Contact Name</span>
+                                <span class="fw-semibold">{{ patient.emergency_contact_name if patient.emergency_contact_name else 'Not specified' }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                <span class="text-secondary"><i class="bi bi-telephone me-2"></i>Contact Phone</span>
+                                <span class="fw-semibold">{{ patient.emergency_contact_phone if patient.emergency_contact_phone else 'Not specified' }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Allergies & Reactions -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="fw-bold text-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Allergies & Reactions</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if patient.allergies %}
+                            <p class="mb-0 text-dark white-space-pre-line">{{ patient.allergies }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic mb-0">No known allergies recorded.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Conditions / History -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="fw-bold text-info mb-0"><i class="bi bi-journal-medical me-2"></i>Medical Conditions & History</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if patient.medical_conditions %}
+                            <p class="mb-0 text-dark white-space-pre-line">{{ patient.medical_conditions }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic mb-0">No pre-existing medical conditions recorded.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

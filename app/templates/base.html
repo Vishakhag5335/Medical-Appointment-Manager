@@ -43,6 +43,16 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('patient.appointments') }}"><i class="bi bi-journal-medical me-1"></i> My Appointments</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.view_profile') }}"><i class="bi bi-person-lines-fill me-1"></i> Health Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.prescriptions') }}"><i class="bi bi-file-earmark-medical me-1"></i> My Prescriptions</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.reports') }}"><i class="bi bi-folder2-open me-1"></i> Medical Reports</a>
+                            </li>
+
                         {% elif current_user.role == 'doctor' %}
                             {% if current_user.doctor and current_user.doctor.verification_status == 'approved' %}
                                 <li class="nav-item">
@@ -51,7 +61,11 @@
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ url_for('doctor.slots') }}"><i class="bi bi-clock-history me-1"></i> Manage Slots</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('doctor.prescriptions') }}"><i class="bi bi-file-earmark-medical me-1"></i> Prescriptions</a>
+                                </li>
                             {% endif %}
+
                         {% elif current_user.role == 'admin' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Admin Dashboard</a>
